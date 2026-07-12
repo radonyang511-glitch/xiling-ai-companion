@@ -1,0 +1,17 @@
+{
+  "name": "xiling-ai-companion",
+  "version": "1.0.0",
+  "description": "AI虚拟陪伴助手 - 栖灵/小灵 Live2D Chat Application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "sherpa-onnx-node": "^1.13.3"
+  }
+}

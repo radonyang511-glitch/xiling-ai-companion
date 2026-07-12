@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>栖灵 - AI 虚拟陪伴助手</title>
+  <link rel="stylesheet" href="/css/style.css?v=18">
+  <script src="/lib/pixi.min.js"></script>
+  <script src="/lib/live2dcubismcore.min.js"></script>
+  <script src="/lib/pixi-live2d-display.min.js"></script>
+</head>
+<body>
+
+<video class="ux-bg-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+  <source src="/background/%E9%9B%A8.mp4" type="video/mp4">
+</video>
+
+<!-- Login Overlay -->
+<div id="login-overlay" class="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">✨</div>
+    <div class="login-title">栖灵</div>
+    <div class="login-subtitle">AI 虚拟陪伴助手</div>
+    <input id="login-username" class="login-input" placeholder="用户名" autocomplete="username">
+    <input id="login-password" class="login-input" type="password" placeholder="密码（可选）" autocomplete="new-password">
+    <button id="login-btn" class="login-btn">进入</button>
+    <div class="login-switch">
+      <a id="login-switch-link">没有账号？点击注册</a>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app" style="display:none;">
+
+  <!-- Icon Nav -->
+  <nav class="icon-nav">
+    <div class="nav-logo" title="栖灵">✨</div>
+    <div class="nav-item active" data-panel="chat" title="聊天">💬</div>
+    <div class="nav-label active">聊天</div>
+    <div class="nav-item" data-panel="moments" title="动态">📰</div>
+    <div class="nav-label">动态</div>
+    <div class="nav-item" data-panel="diary" title="日记">📔</div>
+    <div class="nav-label">日记</div>
+    <div class="nav-spacer"></div>
+    <div class="nav-item nav-call" id="btn-call-mode" data-panel="call" title="语音通话">📞</div>
+    <div class="nav-label">通话</div>
+    <div class="nav-voice-selector" id="nav-voice-selector" title="选择朗读音色">
+      <button type="button" class="nav-voice-btn" id="btn-voice-prev" aria-label="上一种音色">◀</button>
+      <div class="nav-voice-info">
+        <div class="nav-voice-icon">🎵</div>
+        <div class="nav-voice-label">音色选择</div>
+        <div class="nav-voice-name" id="voice-name-display">苏映雪</div>
+      </div>
+      <button type="button" class="nav-voice-btn" id="btn-voice-next" aria-label="下一种音色">▶</button>
+    </div>
+  </nav>
+
+  <!-- Live2D Panel -->
+  <div class="live2d-panel" id="live2d-panel">
+    <div class="ambient-glow glow-top"></div>
+    <div class="ambient-glow glow-bottom"></div>
+    <div class="live2d-container" id="live2d-container"></div>
+    <div class="live2d-placeholder" id="live2d-placeholder">Live2D<br/>栖灵</div>
+    <div class="char-bubble" id="char-bubble" style="position:absolute;bottom:80px;">
+      今天心情怎么样？<br/>跟我分享一下吧~
+    </div>
+    <div class="panel-badge-top-left">
+      <div class="affection-badge" id="affection-badge">
+        ❤️ Lv.<span id="aff-level">1</span> ·
+        <div class="affection-progress">
+          <div class="affection-progress-bar" id="aff-progress-bar" style="width:0%;"></div>
+        </div>
+        <span id="aff-points">0</span>/<span id="aff-threshold">100</span>
+      </div>
+    </div>
+    <div class="panel-badge-top-right">
+      <button class="camera-toggle-btn" id="btn-camera-toggle" title="开启摄像头面捕" onclick="toggleCamera()">📷</button>
+      <a class="camera-toggle-btn" id="btn-account-security" href="#account-overlay" title="账号与安全" aria-label="账号与安全">
+        <span class="ui-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 10.4V8.1A4.8 4.8 0 0 1 12 3.3a4.8 4.8 0 0 1 4.8 4.8v2.3"/><path d="M6.4 10.4h11.2A1.9 1.9 0 0 1 19.5 12v6.8a1.9 1.9 0 0 1-1.9 1.9H6.4a1.9 1.9 0 0 1-1.9-1.9V12a1.9 1.9 0 0 1 1.9-1.6z"/><path d="M12 14.4v2.7"/></svg></span>
+      </a>
+      <div class="day-night-btn" id="btn-day-night" title="切换昼夜模式">🌙</div>
+    </div>
+    <div class="panel-actions-bottom">
+      <button type="button" class="panel-action-btn" id="btn-mood-checkin">😊 心情打卡</button>
+      <button type="button" class="panel-action-btn" id="btn-model-switch">👤 人物</button>
+    </div>
+  </div>
+
+  <!-- Content Area -->
+  <div class="content-area">
+
+    <!-- Chat Panel -->
+    <div class="panel-section active" id="panel-chat">
+      <div class="content-header">
+        <div class="content-header-left">
+          <span class="content-title">对话</span>
+          <span class="online-dot"></span>
+          <span class="online-text" id="online-status-text">栖灵在线</span>
+        </div>
+        <div class="filter-pills">
+          <span class="filter-pill active" data-range="today">今天</span>
+          <span class="filter-pill" data-range="yesterday">昨天</span>
+          <span class="filter-pill" data-range="earlier">更早</span>
+        </div>
+      </div>
+      <div class="content-body" id="chat-messages">
+        <div class="chat-messages">
+          <div class="time-divider"><span>欢迎</span></div>
+          <div class="chat-msg">
+            <div class="chat-avatar">✨</div>
+            <div class="chat-bubble ai">
+              你好呀~ 我是栖灵，很高兴认识你！<br/>想聊什么都可以跟我说哦 💕
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <div class="chat-input-row">
+          <button class="btn-input-icon" id="btn-mood-quick" title="心情打卡">😊</button>
+          <input id="chat-input" placeholder="输入消息..." maxlength="500" autocomplete="off">
+          <button class="btn-input-icon muted" id="btn-voice-input" title="语音输入">🎤</button>
+          <button class="btn-send" id="btn-send" title="发送">→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Moments Panel -->
+    <div class="panel-section" id="panel-moments">
+      <div class="content-header">
+        <span class="content-title">栖灵的动态</span>
+        <button class="btn btn-primary" id="btn-generate-moment" style="font-size:11px;padding:4px 12px;">生成新动态</button>
+      </div>
+      <div class="content-body" id="moments-list">
+        <div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">还没有动态</div></div>
+      </div>
+    </div>
+
+    <!-- Diary Panel -->
+    <div class="panel-section" id="panel-diary">
+      <div class="content-header">
+        <span class="content-title">记忆日记</span>
+        <button class="btn btn-primary" id="btn-generate-diary" style="font-size:11px;padding:4px 12px;">生成今日日记</button>
+      </div>
+      <div class="content-body" id="diary-list">
+        <div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">还没有日记</div></div>
+      </div>
+    </div>
+
+    <!-- Call Panel -->
+    <div class="panel-section" id="panel-call">
+      <div class="content-header">
+        <span class="content-title">语音通话</span>
+        <span class="online-dot"></span>
+        <span class="online-text">沉浸通话中</span>
+      </div>
+      <div class="content-body call-panel-body">
+        <div class="call-overlay" id="call-overlay">
+          <div class="call-live2d" id="call-live2d-container">
+            <div class="live2d-placeholder" style="width:100%;height:100%;">Live2D</div>
+          </div>
+          <div class="call-model-switcher" id="call-model-switcher">
+            <button class="call-model-btn active" data-call-model="panda-cake" title="栖灵·熊猫甜品师">🐼</button>
+            <button class="call-model-btn" data-call-model="xiaofaduo" title="泠瑶·希斯提亚">🌸</button>
+            <button class="call-model-btn" data-call-model="rabbit" title="沐沐·小兔子">🐰</button>
+          </div>
+          <div class="call-status" id="call-status">通话中...</div>
+          <div class="call-timer" id="call-timer">00:00</div>
+          <div class="call-subtitle" id="call-subtitle">栖灵在听...</div>
+          <div class="call-actions">
+            <button class="btn-call btn-call-mute" id="btn-call-mute" title="静音">🎤</button>
+            <button class="btn-call btn-call-end" id="btn-call-end" title="挂断">📞</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Account Security Overlay -->
+<div class="account-overlay" id="account-overlay">
+  <div class="account-panel">
+    <div class="mood-title">账号与安全</div>
+    <div class="mood-subtitle">管理登录状态、导出数据或删除账号</div>
+    <div class="account-user-card">
+      <div class="account-avatar">🔐</div>
+      <div>
+        <div class="account-name" id="account-display-name">当前用户</div>
+        <div class="account-id" id="account-user-id">安全会话已启用</div>
+      </div>
+    </div>
+    <div class="account-actions">
+      <button class="btn btn-primary account-action" id="btn-export-data">导出我的数据</button>
+      <button class="btn btn-ghost account-action" id="btn-logout">退出登录</button>
+      <button class="btn btn-danger account-action" id="btn-delete-account">删除账号</button>
+    </div>
+    <div class="account-danger-note">删除账号会清除聊天、心情、日记等个人数据，且不可恢复。</div>
+    <div class="mood-actions">
+      <button class="btn btn-ghost" id="btn-account-close">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mood Check-in Overlay -->
+<div class="mood-overlay" id="mood-overlay" style="display:none;">
+  <div class="mood-panel mood-trend-panel mood-dual-trend-panel">
+    <div class="mood-panel-header">
+      <div>
+        <div class="mood-title">今天心情怎么样？</div>
+        <div class="mood-subtitle" id="mood-trend-subtitle">记录此刻，也看看今天的心情轨迹。</div>
+      </div>
+      <div class="mood-trend-chip">实时更新</div>
+    </div>
+
+    <div class="mood-chart-grid">
+      <div class="mood-trend-card mood-trend-card-primary" id="mood-trend-card">
+        <div class="mood-trend-card-head">
+          <span>最近心情趋势</span>
+          <span id="mood-trend-range">最近30天</span>
+        </div>
+        <div class="mood-chart-wrap" id="mood-chart-wrap">
+          <svg id="mood-trend-svg" class="mood-trend-svg" viewBox="0 0 320 160" role="img" aria-label="最近30天每日汇总心情曲线"></svg>
+          <div class="mood-chart-empty" id="mood-chart-empty" style="display:none;">还没有足够的每日记录，今天开始记录吧~</div>
+          <div class="mood-chart-tooltip" id="mood-chart-tooltip" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div class="mood-trend-card mood-intraday-card" id="mood-intraday-card">
+        <div class="mood-trend-card-head">
+          <span>今日心情轨迹</span>
+          <span id="mood-intraday-range">按时刻记录</span>
+        </div>
+        <div class="mood-chart-wrap mood-intraday-wrap" id="mood-intraday-wrap">
+          <svg id="mood-intraday-svg" class="mood-trend-svg mood-intraday-svg" viewBox="0 0 320 140" role="img" aria-label="今日时刻心情轨迹曲线"></svg>
+          <div class="mood-chart-empty" id="mood-intraday-empty" style="display:none;">再记录一次，就能看到今天的变化曲线。</div>
+          <div class="mood-chart-tooltip" id="mood-intraday-tooltip" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mood-stats-row mood-live-stats-row">
+      <div class="mood-stat-card">
+        <span class="mood-stat-label">连续打卡</span>
+        <strong id="mood-streak-value">0天</strong>
+      </div>
+      <div class="mood-stat-card">
+        <span class="mood-stat-label">今日总体</span>
+        <strong id="mood-today-value">未记录</strong>
+      </div>
+      <div class="mood-stat-card">
+        <span class="mood-stat-label">今日记录</span>
+        <strong id="mood-event-count-value">0次</strong>
+      </div>
+    </div>
+
+    <div class="mood-checkin-section">
+      <div class="mood-section-label">记录此刻心情</div>
+      <div class="mood-options" id="mood-options">
+        <button type="button" class="mood-option" data-mood="great" title="开心" aria-label="选择开心心情">😄</button>
+        <button type="button" class="mood-option" data-mood="calm" title="平静" aria-label="选择平静心情">😐</button>
+        <button type="button" class="mood-option" data-mood="anxious" title="焦虑" aria-label="选择焦虑心情">😰</button>
+        <button type="button" class="mood-option" data-mood="sad" title="沮丧" aria-label="选择沮丧心情">😢</button>
+        <button type="button" class="mood-option" data-mood="terrible" title="糟糕" aria-label="选择糟糕心情">😡</button>
+      </div>
+      <div class="mood-labels">
+        <div class="mood-label">开心</div>
+        <div class="mood-label">平静</div>
+        <div class="mood-label">焦虑</div>
+        <div class="mood-label">沮丧</div>
+        <div class="mood-label">糟糕</div>
+      </div>
+      <textarea id="mood-note" class="mood-note" placeholder="写点什么吧...（最多50字）" maxlength="50" rows="2"></textarea>
+      <div class="mood-actions">
+        <button class="btn btn-ghost" id="btn-mood-cancel">取消</button>
+        <button class="btn btn-primary" id="btn-mood-submit">记录此刻心情 ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Model Selector Overlay -->
+<div class="model-select-overlay" id="model-select-overlay" style="display:none;">
+  <div class="model-select-panel">
+    <div class="mood-title">选择角色</div>
+    <div class="mood-subtitle">点击切换 Live2D 模型</div>
+    <div class="model-select-options" id="model-select-options">
+      <div class="model-select-card active" data-model="panda-cake">
+        <div class="model-select-avatar">🐼</div>
+        <div class="model-select-info">
+          <div class="model-select-name">栖灵</div>
+          <div class="model-select-desc">熊猫甜品师</div>
+        </div>
+        <div class="model-select-check">✓</div>
+      </div>
+      <div class="model-select-card" data-model="xiaofaduo">
+        <div class="model-select-avatar">🌸</div>
+        <div class="model-select-info">
+          <div class="model-select-name">泠瑶</div>
+          <div class="model-select-desc">希斯提亚</div>
+        </div>
+        <div class="model-select-check">✓</div>
+      </div>
+      <div class="model-select-card" data-model="rabbit">
+        <div class="model-select-avatar">🐰</div>
+        <div class="model-select-info">
+          <div class="model-select-name">沐沐</div>
+          <div class="model-select-desc">小兔子</div>
+        </div>
+        <div class="model-select-check">✓</div>
+      </div>
+    </div>
+    <div class="mood-actions">
+      <button class="btn btn-ghost" id="btn-model-select-close">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Voice Selector Overlay -->
+<div class="voice-select-overlay" id="voice-select-overlay" style="display:none;">
+  <div class="voice-select-panel">
+    <div class="mood-title">🎵 选择朗读音色</div>
+    <div class="mood-subtitle">点击试听不同音色</div>
+    <div class="voice-select-options" id="voice-select-options">
+    </div>
+    <div class="mood-actions">
+      <button class="btn btn-ghost" id="btn-voice-select-close">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Face Preview Overlay -->
+<div class="face-preview-overlay" id="face-preview" style="display:none;">
+  <canvas id="face-preview-canvas"></canvas>
+  <div class="face-preview-label" id="face-preview-label">😐 面无表情</div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Diaries Detail overlay (created dynamically) -->
+
+<script src="/js/api.js?v=9"></script>
+<script src="/js/app.js?v=12"></script>
+<script src="/js/read-aloud.js?v=10"></script>
+<script src="/js/chat.js?v=13"></script>
+<script src="/js/mood-utils.js?v=1"></script>
+<script src="/js/mood.js?v=7"></script>
+<script src="/js/moments.js?v=10"></script>
+<script src="/js/mediapipe.js?v=1"></script>
+<script src="/js/voice.js?v=11"></script>
+
+</body>
+</html>

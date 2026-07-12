@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>栖灵 - 管理后台</title>
+  <link rel="stylesheet" href="/css/style.css?v=19">
+</head>
+<body>
+
+<video class="ux-bg-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+  <source src="/background/%E9%9B%A8.mp4" type="video/mp4">
+</video>
+
+<!-- Admin Login -->
+<div id="admin-login-overlay" class="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">🛡️</div>
+    <div class="login-title">管理后台</div>
+    <div class="login-subtitle">危机处理中心</div>
+    <input id="admin-username" class="login-input" placeholder="管理员账号" value="admin">
+    <input id="admin-password" class="login-input" type="password" placeholder="管理员密码" value="admin123">
+    <button id="admin-login-btn" class="login-btn">登录</button>
+    <div id="admin-login-error" style="color:#f87171;font-size:12px;margin-top:10px;display:none;"></div>
+  </div>
+</div>
+
+<!-- Admin Shell -->
+<div id="admin-shell" class="admin-shell" style="display:none;">
+  <div class="admin-sidebar">
+    <div class="admin-logo">🛡️ 栖灵后台</div>
+    <div class="admin-nav-item active" data-section="dashboard">📊 仪表盘</div>
+    <div class="admin-nav-item" data-section="users">👥 用户管理</div>
+    <div class="admin-nav-item" data-section="crisis">🚨 危机工单</div>
+    <div class="admin-nav-item" data-section="mood-stats">📈 情绪看板</div>
+    <div class="admin-nav-item" data-section="config">⚙️ 配置中心</div>
+    <div style="flex:1;"></div>
+    <div class="admin-nav-item" id="btn-admin-logout" style="color:#f87171;">退出登录</div>
+  </div>
+  <div class="admin-main">
+
+    <!-- Dashboard -->
+    <div class="admin-section active" id="section-dashboard">
+      <h2 style="font-size:18px;margin-bottom:20px;">📊 仪表盘</h2>
+      <div class="stats-grid" id="dashboard-stats"></div>
+      <h3 style="font-size:14px;margin-bottom:12px;color:var(--text-muted);">最近告警</h3>
+      <div id="dashboard-recent-alerts"></div>
+    </div>
+
+    <!-- Users -->
+    <div class="admin-section" id="section-users">
+      <h2 style="font-size:18px;margin-bottom:20px;">👥 用户管理</h2>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="users-table">
+          <thead><tr><th>ID</th><th>用户名</th><th>等级</th><th>好感度</th><th>最新心情</th><th>对话数</th><th>危机次数</th><th>注册时间</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Crisis Workbench -->
+    <div class="admin-section" id="section-crisis">
+      <h2 style="font-size:18px;margin-bottom:20px;">🚨 危机处理工单</h2>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="crisis-table">
+          <thead><tr><th>ID</th><th>用户</th><th>触发消息</th><th>风险等级</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Mood Stats -->
+    <div class="admin-section" id="section-mood-stats">
+      <h2 style="font-size:18px;margin-bottom:20px;">📈 情绪看板</h2>
+      <div class="chart-container">
+        <h3 style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">全平台心情走势（近30天）</h3>
+        <canvas id="mood-chart"></canvas>
+      </div>
+      <div id="user-mood-dist"></div>
+    </div>
+
+    <!-- Config -->
+    <div class="admin-section" id="section-config">
+      <h2 style="font-size:18px;margin-bottom:20px;">⚙️ 配置中心</h2>
+      <div style="margin-bottom:24px;">
+        <h3 style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">AI 核心参数</h3>
+        <div id="config-list"></div>
+      </div>
+      <div>
+        <h3 style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">危机词库管理</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input id="new-keyword" class="config-input" placeholder="添加新关键词..." style="flex:1;">
+          <button class="btn btn-primary" id="btn-add-keyword" data-action="add-keyword">添加</button>
+        </div>
+        <div class="keyword-tags" id="keyword-tags"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/js/api.js?v=10"></script>
+<script src="/js/admin.js?v=2"></script>
+</body>
+</html>
