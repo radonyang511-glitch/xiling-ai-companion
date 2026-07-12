@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Runtime database and user data
+xiling.db
+xiling.db-wal
+xiling.db-shm
+*.db
+*.sqlite
+*.sqlite3
+
+# Local tool state
+.superpowers/
+.claude/
+
+# Logs and temporary files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.output
+pdf_output.txt
+
+# Debug screenshots
+account-button-shot.png
+account-overlay-shot.png
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Large / licensed assets: do not publish unless license is confirmed
+Live 2d/
+public/model/
+Background/*.mp4
+public/background/*.mp4
+
+# Office documents: convert to Markdown and review before publishing
+*.docx
